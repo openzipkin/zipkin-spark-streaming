@@ -16,14 +16,12 @@ package zipkin.sparkstreaming;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.streaming.Duration;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaPairDStream;
@@ -32,6 +30,7 @@ import scala.Tuple2;
 import zipkin.Codec;
 import zipkin.Span;
 import zipkin.internal.Util;
+import zipkin.storage.StorageComponent;
 
 import static zipkin.internal.Util.checkArgument;
 import static zipkin.internal.Util.checkNotNull;
@@ -55,9 +54,15 @@ public final class SparkStreamingJob implements Closeable {
       sparkProperties.put("spark.akka.logLifecycleEvents", "true");
     }
 
-    /** The time interval at which streaming data will be divided into batches. Defaults to 10s. */
+    /** Produces a stream of serialized span messages (thrift or json lists) */
     public Builder spanMessagesFactory(MessageStreamFactory messageStreamFactory) {
       this.messageStreamFactory = checkNotNull(messageStreamFactory, "messageStreamFactory");
+      return this;
+    }
+
+    /** Accepts spans grouped by trace ID. For example, writing to a {@link StorageComponent} */
+    public Builder traceConsumer(TraceConsumer traceConsumer) {
+      this.traceConsumer = checkNotNull(traceConsumer, "traceConsumer");
       return this;
     }
 
@@ -84,14 +89,9 @@ public final class SparkStreamingJob implements Closeable {
       return this;
     }
 
-    /** When set, this indicates which sparkJars to distribute to the cluster. */
+    /** Overrides the properties used to create a {@link SparkConf}. */
     public Builder sparkProperties(Map<String, String> sparkProperties) {
       this.sparkProperties = checkNotNull(sparkProperties, "sparkProperties");
-      return this;
-    }
-
-    public Builder traceConsumer(TraceConsumer traceConsumer) {
-      this.traceConsumer = checkNotNull(traceConsumer, "traceConsumer");
       return this;
     }
 
@@ -149,13 +149,12 @@ public final class SparkStreamingJob implements Closeable {
         .mapToPair(s -> new Tuple2<>(Util.toLowerHex(s.traceIdHigh, s.traceId), s))
         .groupByKey();
 
-    VoidFunction<Iterator<Tuple2<String, Iterable<Span>>>> storeTrace = p -> {
-      while (p.hasNext()) {
-        traceConsumer.accept(p.next()._2());
-      }
-    };
     traces.foreachRDD(rdd -> {
-      rdd.foreachPartition(storeTrace);
+      rdd.foreachPartition(p -> {
+        while (p.hasNext()) { // _1 is a trace id and _2 are the spans
+          traceConsumer.accept(p.next()._2());
+        }
+      });
     });
   }
 

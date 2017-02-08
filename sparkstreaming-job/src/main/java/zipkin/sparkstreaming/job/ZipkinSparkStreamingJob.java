@@ -31,6 +31,7 @@ import zipkin.Endpoint;
 import zipkin.Span;
 import zipkin.autoconfigure.sparkstreaming.ZipkinSparkStreamingAutoConfiguration;
 import zipkin.sparkstreaming.MessageStreamFactory;
+import zipkin.sparkstreaming.SparkStreamingJob;
 import zipkin.sparkstreaming.TraceConsumer;
 
 import static java.util.Arrays.asList;
@@ -44,7 +45,7 @@ public class ZipkinSparkStreamingJob {
   public static void main(String[] args) throws UnsupportedEncodingException {
     System.setProperty("zipkin.sparkstreaming.spark-jars", pathToUberJar());
     new SpringApplicationBuilder(ZipkinSparkStreamingJob.class).run(args)
-        .getBean(zipkin.sparkstreaming.SparkStreamingJob.class).awaitTermination();
+        .getBean(SparkStreamingJob.class).awaitTermination();
   }
 
   // We need to use eventually us auto-configuration for MessageStreamFactory and TraceConsumer.
