@@ -18,20 +18,24 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import zipkin.sparkstreaming.MessageStreamFactory;
+import zipkin.sparkstreaming.SpanProcessor;
 import zipkin.sparkstreaming.SparkStreamingJob;
 import zipkin.sparkstreaming.TraceConsumer;
 
 @Configuration
 @EnableConfigurationProperties(ZipkinSparkStreamingProperties.class)
-@ConditionalOnBean({MessageStreamFactory.class, TraceConsumer.class})
+@ConditionalOnBean({MessageStreamFactory.class, TraceConsumer.class, SpanProcessor.class})
 public class ZipkinSparkStreamingAutoConfiguration {
 
   @Bean
   SparkStreamingJob sparkStreaming(ZipkinSparkStreamingProperties sparkStreaming,
-      MessageStreamFactory messageStreamFactory, TraceConsumer traceConsumer) {
+                                   MessageStreamFactory messageStreamFactory,
+                                   TraceConsumer traceConsumer,
+                                   SpanProcessor spanProcessor) {
     return sparkStreaming.toBuilder()
         .spanMessagesFactory(messageStreamFactory)
         .traceConsumer(traceConsumer)
+        .spanProcessor(spanProcessor)
         .build()
         .start();
   }

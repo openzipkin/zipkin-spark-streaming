@@ -16,12 +16,14 @@ package zipkin.sparkstreaming;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.spark.SparkConf;
+import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.streaming.Duration;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaPairDStream;
@@ -30,7 +32,6 @@ import scala.Tuple2;
 import zipkin.Codec;
 import zipkin.Span;
 import zipkin.internal.Util;
-import zipkin.storage.StorageComponent;
 
 import static zipkin.internal.Util.checkArgument;
 import static zipkin.internal.Util.checkNotNull;
@@ -43,6 +44,7 @@ public final class SparkStreamingJob implements Closeable {
   public static final class Builder {
     MessageStreamFactory messageStreamFactory;
     TraceConsumer traceConsumer;
+    SpanProcessor spanProcessor;
     String sparkMaster = "local[*]";
     String[] sparkJars;
     Map<String, String> sparkProperties = new LinkedHashMap<>();
@@ -54,15 +56,9 @@ public final class SparkStreamingJob implements Closeable {
       sparkProperties.put("spark.akka.logLifecycleEvents", "true");
     }
 
-    /** Produces a stream of serialized span messages (thrift or json lists) */
+    /** The time interval at which streaming data will be divided into batches. Defaults to 10s. */
     public Builder spanMessagesFactory(MessageStreamFactory messageStreamFactory) {
       this.messageStreamFactory = checkNotNull(messageStreamFactory, "messageStreamFactory");
-      return this;
-    }
-
-    /** Accepts spans grouped by trace ID. For example, writing to a {@link StorageComponent} */
-    public Builder traceConsumer(TraceConsumer traceConsumer) {
-      this.traceConsumer = checkNotNull(traceConsumer, "traceConsumer");
       return this;
     }
 
@@ -89,9 +85,19 @@ public final class SparkStreamingJob implements Closeable {
       return this;
     }
 
-    /** Overrides the properties used to create a {@link SparkConf}. */
+    /** When set, this indicates which sparkJars to distribute to the cluster. */
     public Builder sparkProperties(Map<String, String> sparkProperties) {
       this.sparkProperties = checkNotNull(sparkProperties, "sparkProperties");
+      return this;
+    }
+
+    public Builder traceConsumer(TraceConsumer traceConsumer) {
+      this.traceConsumer = checkNotNull(traceConsumer, "traceConsumer");
+      return this;
+    }
+
+    public Builder spanProcessor(SpanProcessor spanProcessor) {
+      this.spanProcessor = checkNotNull(spanProcessor, "spanProcessor");
       return this;
     }
 
@@ -102,12 +108,14 @@ public final class SparkStreamingJob implements Closeable {
 
   final JavaStreamingContext jsc;
   final TraceConsumer traceConsumer;
+  final SpanProcessor spanProcessor;
   final MessageStreamFactory messageStreamFactory;
   final AtomicBoolean started = new AtomicBoolean(false);
 
   SparkStreamingJob(Builder builder) {
     messageStreamFactory = checkNotNull(builder.messageStreamFactory, "messageStreamFactory");
     traceConsumer = checkNotNull(builder.traceConsumer, "traceConsumer");
+    spanProcessor = checkNotNull(builder.spanProcessor, "spanProcessor");
     SparkConf conf = new SparkConf(true)
         .setMaster(builder.sparkMaster)
         .setAppName(getClass().getName());
@@ -121,7 +129,7 @@ public final class SparkStreamingJob implements Closeable {
   public SparkStreamingJob start() {
     if (!started.compareAndSet(false, true)) return this;
 
-    streamSpansToStorage(messageStreamFactory.create(jsc), traceConsumer);
+    streamSpansToStorage(messageStreamFactory.create(jsc), traceConsumer, spanProcessor);
 
     jsc.start();
     return this;
@@ -129,7 +137,9 @@ public final class SparkStreamingJob implements Closeable {
 
   // NOTE: this is intentionally static to remind us that all state passed in must be serializable
   // Otherwise, tasks cannot be distributed across the cluster.
-  static void streamSpansToStorage(JavaDStream<byte[]> messageStream, TraceConsumer traceConsumer) {
+  static void streamSpansToStorage(JavaDStream<byte[]> messageStream,
+                                   TraceConsumer traceConsumer,
+                                   SpanProcessor spanProcessor) {
     JavaDStream<Span> decodedSpans = messageStream
         .filter(bytes -> bytes.length > 0)
         .map(bytes -> {
@@ -145,16 +155,19 @@ public final class SparkStreamingJob implements Closeable {
         .filter(s -> true /** TODO: plug in some filter and metrics.incrementSpansDropped */)
         .map(s -> s /** TODO: plugin some transformer */);
 
-    JavaPairDStream<String, Iterable<Span>> traces = validSpans
+    JavaDStream<Span> processedSpans = spanProcessor.process(validSpans);
+
+    JavaPairDStream<String, Iterable<Span>> traces = processedSpans
         .mapToPair(s -> new Tuple2<>(Util.toLowerHex(s.traceIdHigh, s.traceId), s))
         .groupByKey();
 
+    VoidFunction<Iterator<Tuple2<String, Iterable<Span>>>> storeTrace = p -> {
+      while (p.hasNext()) {
+        traceConsumer.accept(p.next()._2());
+      }
+    };
     traces.foreachRDD(rdd -> {
-      rdd.foreachPartition(p -> {
-        while (p.hasNext()) { // _1 is a trace id and _2 are the spans
-          traceConsumer.accept(p.next()._2());
-        }
-      });
+      rdd.foreachPartition(storeTrace);
     });
   }
 

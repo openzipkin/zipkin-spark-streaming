@@ -74,5 +74,9 @@ public class ZipkinSparkStreamingJobAutoConfigurationTest {
         System.err.println(trace);
       };
     }
+
+    @Bean SpanProcessor spanProcessor() {
+      return spanStream -> spanStream;
+    }
   }
 }
