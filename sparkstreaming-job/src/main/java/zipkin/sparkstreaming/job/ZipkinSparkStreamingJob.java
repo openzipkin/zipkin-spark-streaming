@@ -16,8 +16,10 @@ package zipkin.sparkstreaming.job;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 import org.apache.spark.api.java.JavaRDD;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -25,48 +27,64 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Primary;
 import zipkin.BinaryAnnotation;
 import zipkin.Codec;
 import zipkin.Endpoint;
 import zipkin.Span;
 import zipkin.autoconfigure.sparkstreaming.ZipkinSparkStreamingAutoConfiguration;
+import zipkin.sparkstreaming.ElasticsearchHttpSpanStorage;
+import zipkin.sparkstreaming.FinagleSpanProcessor;
+import zipkin.sparkstreaming.KafkaStream;
 import zipkin.sparkstreaming.MessageStreamFactory;
-import zipkin.sparkstreaming.SparkStreamingJob;
+import zipkin.sparkstreaming.SpanProcessor;
 import zipkin.sparkstreaming.TraceConsumer;
-
-import static java.util.Arrays.asList;
 
 @SpringBootApplication
 @Import({
+    ZipkinSparkStreamingJob.KafkaStreamConfiguration.class,
+    ZipkinSparkStreamingJob.EslaticsearchConfiguration.class,
+    ZipkinSparkStreamingJob.SpanProcessorConfiguration.class,
     ZipkinSparkStreamingAutoConfiguration.class,
-    ZipkinSparkStreamingJob.DummyConfiguration.class
 })
 public class ZipkinSparkStreamingJob {
   public static void main(String[] args) throws UnsupportedEncodingException {
     System.setProperty("zipkin.sparkstreaming.spark-jars", pathToUberJar());
     new SpringApplicationBuilder(ZipkinSparkStreamingJob.class).run(args)
-        .getBean(SparkStreamingJob.class).awaitTermination();
+        .getBean(zipkin.sparkstreaming.SparkStreamingJob.class).awaitTermination();
   }
 
+  /*
   // We need to use eventually us auto-configuration for MessageStreamFactory and TraceConsumer.
   // This is an example, that seeds a single span (then loops forever since no more spans arrive).
   @Configuration
   static class DummyConfiguration {
 
     // This creates only one trace, so isn't that interesting.
+    @Primary
     @Bean MessageStreamFactory messagesFactory() {
       return jsc -> {
         Queue<JavaRDD<byte[]>> rddQueue = new LinkedList<>();
-        byte[] oneSpan = Codec.JSON.writeSpans(asList(span(1L)));
+
+        List<Span> spans = new ArrayList<>();
+
+        for (int i = 0 ; i < 100 ; i ++) {
+          spans.add(span((long)i));
+        }
+
+        byte[] oneSpan = Codec.JSON.writeSpans(spans);
         rddQueue.add(jsc.sparkContext().parallelize(Collections.singletonList(oneSpan)));
         return jsc.queueStream(rddQueue);
       };
     }
 
+    @Primary
     @Bean TraceConsumer traceConsumer() {
       return trace -> System.err.println(trace);
     }
   }
+
+  */
 
   static Span span(long traceId) {
     Endpoint e = Endpoint.builder().serviceName("service").ipv4(127 << 24 | 1).port(8080).build();
@@ -79,5 +97,31 @@ public class ZipkinSparkStreamingJob {
   static String pathToUberJar() throws UnsupportedEncodingException {
     URL jarFile = ZipkinSparkStreamingJob.class.getProtectionDomain().getCodeSource().getLocation();
     return URLDecoder.decode(jarFile.getPath(), "UTF-8");
+  }
+
+
+  @Configuration
+  static class KafkaStreamConfiguration {
+    @Bean
+    MessageStreamFactory kafkaStream() {
+      return new KafkaStream();
+    }
+  }
+
+  @Configuration
+  static class EslaticsearchConfiguration {
+    @Bean
+    TraceConsumer esConsumer() {
+      return new ElasticsearchHttpSpanStorage();
+      //return trace -> System.err.println(trace);
+    }
+  }
+
+  @Configuration
+  static class SpanProcessorConfiguration {
+    @Bean
+    SpanProcessor spanProcessor() {
+      return new FinagleSpanProcessor();
+    }
   }
 }

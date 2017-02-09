@@ -26,8 +26,7 @@ public class ZipkinSparkStreamingProperties {
   final Map<String, String> sparkProperties = new LinkedHashMap<>();
   long batchDuration = 10;
 
-  ZipkinSparkStreamingProperties() {
-    sparkProperties.put("spark.ui.enabled", "false");
+  public ZipkinSparkStreamingProperties() {
     // avoids strange class not found bug on Logger.setLevel
     sparkProperties.put("spark.akka.logLifecycleEvents", "true");
   }
