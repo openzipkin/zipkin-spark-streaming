@@ -33,13 +33,15 @@ import zipkin.autoconfigure.sparkstreaming.ZipkinSparkStreamingAutoConfiguration
 import zipkin.sparkstreaming.Consumer;
 import zipkin.sparkstreaming.SparkStreamingJob;
 import zipkin.sparkstreaming.StreamFactory;
+import zipkin.sparkstreaming.autoconfigure.stream.kafka.ZipkinKafkaStreamFactoryAutoConfiguration;
 
 import static java.util.Arrays.asList;
 
 @SpringBootApplication
 @Import({
     ZipkinSparkStreamingAutoConfiguration.class,
-    ZipkinSparkStreamingJob.DummyConfiguration.class
+    ZipkinSparkStreamingJob.DummyConfiguration.class,
+    ZipkinKafkaStreamFactoryAutoConfiguration.class
 })
 public class ZipkinSparkStreamingJob {
 
@@ -54,17 +56,6 @@ public class ZipkinSparkStreamingJob {
   // This is an example, that seeds a single span (then loops forever since no more spans arrive).
   @Configuration
   static class DummyConfiguration {
-
-    // This creates only one trace, so isn't that interesting.
-    @Bean StreamFactory streamFactory() {
-      return jsc -> {
-        Queue<JavaRDD<byte[]>> rddQueue = new LinkedList<>();
-        byte[] oneSpan = Codec.JSON.writeSpans(asList(span(1L)));
-        rddQueue.add(jsc.sparkContext().parallelize(Collections.singletonList(oneSpan)));
-        return jsc.queueStream(rddQueue);
-      };
-    }
-
     @Bean Consumer consumer() {
       return trace -> System.err.println(trace);
     }
