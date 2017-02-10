@@ -157,7 +157,7 @@ public abstract class SparkStreamingJob implements Closeable {
           for (Adjuster adjuster : adjusters) {
             trace = adjuster.adjust(trace);
           }
-          consumer.accept(p.next());
+          consumer.accept(trace);
         }
       });
     });

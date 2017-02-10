@@ -35,7 +35,9 @@ A stream is a source of json or thrift encoded span messages.
 
 For example, a message stream could be a Kafka topic named "zipkin"
 
-TODO: briefly describe and link to built-in message stream factories
+Stream | Description
+--- | --- | ---
+[Kafka](./stream/kafka) | Ingests spans from a Kafka topic
 
 ### Adjuster
 An adjuster conditionally changes spans sharing the same trace ID.

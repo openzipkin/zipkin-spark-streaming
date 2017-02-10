@@ -34,6 +34,7 @@
 
   <modules>
     <module>sparkstreaming</module>
+    <module>stream-kafka</module>
   </modules>
 
   <dependencyManagement>

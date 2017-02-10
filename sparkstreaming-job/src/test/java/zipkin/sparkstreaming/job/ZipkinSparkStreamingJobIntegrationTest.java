@@ -21,6 +21,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 import zipkin.sparkstreaming.SparkStreamingJob;
+import zipkin.sparkstreaming.StreamFactory;
+import zipkin.sparkstreaming.stream.kafka.KafkaStreamFactory;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -28,11 +30,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(
     classes = ZipkinSparkStreamingJob.class,
     properties = {
+        // update before running test
+        "zipkin.sparkstreaming.stream.kafka.zookeeper:1.1.1.1:2222",
+        "zipkin.sparkstreaming.stream.kafka.zk-connection-path:abc",
     }
 )
 public class ZipkinSparkStreamingJobIntegrationTest {
 
   @Autowired SparkStreamingJob job;
+
+  @Autowired StreamFactory factory;
 
   @After public void close() throws IOException {
     if (job != null) job.close();
@@ -41,4 +48,9 @@ public class ZipkinSparkStreamingJobIntegrationTest {
   @Test public void wiresJob() {
     assertThat(job).isNotNull();
   }
+
+  @Test public void wireStreamFactory() {
+    assertThat(factory).isInstanceOf(KafkaStreamFactory.class);
+  }
+
 }
