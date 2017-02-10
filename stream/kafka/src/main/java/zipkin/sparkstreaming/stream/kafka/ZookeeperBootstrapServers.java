@@ -64,7 +64,7 @@ public abstract class ZookeeperBootstrapServers implements BootstrapServers {
   abstract int sessionTimeout();
 
   @Override public List<String> get() {
-    String connectString = StringUtils.join(connectServers(), ",") + connectSuffix();
+    String connectString = StringUtils.join(connectServers(), ",") + "/" +connectSuffix();
     ZooKeeper zkClient = null;
     try {
       zkClient = new ZooKeeper(connectString, sessionTimeout(), new NoOpWatcher());
