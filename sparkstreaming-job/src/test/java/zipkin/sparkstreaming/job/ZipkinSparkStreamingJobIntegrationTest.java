@@ -32,7 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
     properties = {
         // update before running test
         "zipkin.sparkstreaming.stream.kafka.zookeeper:1.1.1.1:2222",
-        "zipkin.sparkstreaming.stream.kafka.zkConnectionPath:abc",
+        "zipkin.sparkstreaming.stream.kafka.zk-connection-path:abc",
     }
 )
 public class ZipkinSparkStreamingJobIntegrationTest {

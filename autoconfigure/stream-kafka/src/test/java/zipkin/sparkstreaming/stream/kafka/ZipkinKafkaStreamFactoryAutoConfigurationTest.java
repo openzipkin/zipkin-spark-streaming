@@ -36,8 +36,8 @@ public class ZipkinKafkaStreamFactoryAutoConfigurationTest {
     addEnvironment(context,
         "zipkin.sparkstreaming.stream.kafka.topic:topic",
         "zipkin.sparkstreaming.stream.kafka.zookeeper:zookeeper",
-        "zipkin.sparkstreaming.stream.kafka.zkConnectionPath:zkConnectionPath",
-        "zipkin.sparkstreaming.stream.kafka.zkSessionTimeout:" + 1);
+        "zipkin.sparkstreaming.stream.kafka.zk-connection-path:zkConnectionPath",
+        "zipkin.sparkstreaming.stream.kafka.zk-session-timeout:" + 1);
     context.register(PropertyPlaceholderAutoConfiguration.class,
         ZipkinKafkaStreamFactoryAutoConfiguration.class);
     context.refresh();

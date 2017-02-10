@@ -37,7 +37,7 @@ For example, a message stream could be a Kafka topic named "zipkin"
 
 Stream | Description
 --- | --- | ---
-[Kafka](./stream/kafka) | Ingests spans from a Kafka topic.
+[Kafka](./stream/kafka) | Ingests spans from a Kafka topic
 
 ### Adjuster
 An adjuster conditionally changes spans sharing the same trace ID.
