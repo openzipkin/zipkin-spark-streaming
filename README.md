@@ -43,7 +43,16 @@ java -jar zipkin-sparkstreaming-job.jar \
   --zipkin.sparkstreaming.stream.kafka.bootstrap-servers=127.0.0.1:9092 \
   --zipkin.sparkstreaming.sparkMaster=spark://127.0.0.1:7077
 ```
+### Spark quick start
+The quickest way to get started is to clone the repo, build it  and run it locally using [spark submit (http://spark.apache.org/downloads.html).
 
+```bash
+# wget the jar
+spark-submit \
+      --class zipkin.sparkstreaming.job.ZipkinSparkStreamingJob.java \ 
+      --master local[*] \      
+      zipkin-sparkstreaming-job.jar
+```
 ## Key Components
 
 ### Stream
