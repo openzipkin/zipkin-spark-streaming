@@ -49,7 +49,7 @@ The quickest way to get started is to clone the repo, build it  and run it local
 ```bash
 # wget the jar
 spark-submit \
-      --class zipkin.sparkstreaming.job.ZipkinSparkStreamingJob.java \ 
+      --class zipkin.sparkstreaming.job.ZipkinSparkStreamingJob \ 
       --master local[*] \      
       zipkin-sparkstreaming-job.jar
 ```
