@@ -44,7 +44,14 @@ java -jar zipkin-sparkstreaming-job.jar \
   --zipkin.sparkstreaming.sparkMaster=spark://127.0.0.1:7077
 ```
 
+
 ## Key Components
+
+The image below shows the internal architecture of Pintrace collector. StreamFactory is a extensible interface that ingests data from Kafka or any other transport. The ingested spans are then processed to ensure they’re properly formed using a data quality checker. Optionally, the filtering step filters spans based on criteria like service name or annotations on the span. The aggregation phase groups the spans by time or trace ID. The final consumer stage persists the data to a storage system like ElasticSearch service. 
+
+
+
+
 
 ### Stream
 A stream is a source of json or thrift encoded span messages.
