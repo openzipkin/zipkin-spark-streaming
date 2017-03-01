@@ -18,8 +18,6 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.annotation.Import;
 import zipkin.sparkstreaming.SparkStreamingJob;
 import zipkin.sparkstreaming.autoconfigure.adjuster.finagle.ZipkinFinagleAdjusterAutoConfiguration;
-import zipkin.sparkstreaming.autoconfigure.adjuster.finagle
-    .ZipkinFinagleIssue343AdjusterAutoConfiguration;
 import zipkin.sparkstreaming.autoconfigure.consumer.storage.ZipkinStorageConsumerAutoConfiguration;
 import zipkin.sparkstreaming.autoconfigure.stream.kafka.ZipkinKafkaStreamFactoryAutoConfiguration;
 
@@ -29,8 +27,7 @@ import zipkin.sparkstreaming.autoconfigure.stream.kafka.ZipkinKafkaStreamFactory
     // These need to be explicity included as the shade plugin squashes spring.properties
     ZipkinKafkaStreamFactoryAutoConfiguration.class,
     ZipkinFinagleAdjusterAutoConfiguration.class,
-    ZipkinStorageConsumerAutoConfiguration.class,
-    ZipkinFinagleIssue343AdjusterAutoConfiguration.class
+    ZipkinStorageConsumerAutoConfiguration.class
 })
 public class ZipkinSparkStreamingJob {
 

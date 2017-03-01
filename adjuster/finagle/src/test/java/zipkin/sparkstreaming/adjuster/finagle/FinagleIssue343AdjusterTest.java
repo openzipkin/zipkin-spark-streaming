@@ -54,23 +54,14 @@ public class FinagleIssue343AdjusterTest {
           .binaryAnnotations(new ArrayList<>())
           .build();
 
-  /** Default should not do any adjustment */
   @Test
-  public void adjusterDisabled() {
-    Iterable<Span> adjusted = adjuster.adjust(asList(serverSpanWithFinagleFlush));
-    assertThat(adjusted).containsExactly(serverSpanWithFinagleFlush);
-  }
-
-  @Test
-  public void adjusterEnabled() {
-    adjuster = FinagleIssue343Adjuster.newBuilder().adjustIssue343(true).build();
+  public void adjustSpanWithFinagleFlush() {
     Iterable<Span> adjusted = adjuster.adjust(asList(serverSpanWithFinagleFlush));
     assertThat(adjusted).containsExactly(serverSpan);
   }
 
   @Test
-  public void adjusterEnabledHitAnnotationMissing() {
-    adjuster = FinagleIssue343Adjuster.newBuilder().adjustIssue343(true).build();
+  public void hitOrMissBinaryAnnotationMissing() {
     Iterable<Span> adjusted =
         adjuster.adjust(asList(serverSpanWithFinagleFlushWithoutHitBinaryAnnotation));
     assertThat(adjusted).containsExactly(serverSpanWithFinagleFlushWithoutHitBinaryAnnotation);

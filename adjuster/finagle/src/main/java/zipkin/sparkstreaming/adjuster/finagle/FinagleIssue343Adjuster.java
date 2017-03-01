@@ -31,11 +31,8 @@ import java.util.List;
 public abstract class FinagleIssue343Adjuster extends Adjuster{
 
   public static FinagleIssue343Adjuster.Builder newBuilder() {
-    return new AutoValue_FinagleIssue343Adjuster.Builder()
-        .adjustIssue343(false);
+    return new AutoValue_FinagleIssue343Adjuster.Builder();
   }
-
-  abstract boolean adjustIssue343();
 
   @AutoValue.Builder
   public interface Builder {
@@ -49,29 +46,31 @@ public abstract class FinagleIssue343Adjuster extends Adjuster{
      * For more details see
      * https://github.com/twitter/finagle/issues/343
      *
-     * Default false
      */
-    Builder adjustIssue343(boolean adjustIssue343);
-
     FinagleIssue343Adjuster build();
   }
 
   @Override protected boolean shouldAdjust(Span span) {
-    if (adjustIssue343()) {
-      boolean containsFinagleFlushAnnotation = false;
-      for (Annotation a : span.annotations) {
-        if (a.value.equals("finagle.flush")) {
-          containsFinagleFlushAnnotation = true;
-          break;
-        }
+    if (containsFinagleFlushAnnotation(span) && containsHitOrMissBinaryAnnotation(span)) {
+      return true;
+    }
+    return false;
+  }
+
+  private boolean containsHitOrMissBinaryAnnotation(Span span) {
+    for (BinaryAnnotation b : span.binaryAnnotations) {
+      String value = new String(b.value, Util.UTF_8);
+      if (value.equals("Hit") || value.equals("Miss")) {
+        return true;
       }
-      if (containsFinagleFlushAnnotation) {
-        for (BinaryAnnotation b : span.binaryAnnotations) {
-          String value = new String(b.value, Util.UTF_8);
-          if (value.equals("Hit") || value.equals("Miss")) {
-            return true;
-          }
-        }
+    }
+    return false;
+  }
+
+  private boolean containsFinagleFlushAnnotation(Span span) {
+    for (Annotation a : span.annotations) {
+      if (a.value.equals("finagle.flush")) {
+        return true;
       }
     }
     return false;
