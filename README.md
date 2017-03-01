@@ -47,10 +47,9 @@ java -jar zipkin-sparkstreaming-job.jar \
 
 ## Key Components
 
-The image below shows the internal architecture of zipkin spark streaming job. StreamFactory is a extensible interface that ingests data from Kafka or any other transport. The ingested spans are then processed to ensure they’re properly formed using a data quality checker. Optionally, the filtering step filters spans based on criteria like service name or annotations on the span. The aggregation phase groups the spans by time or trace ID. The final consumer stage persists the data to a storage system like ElasticSearch service. 
+The image below shows the internal architecture of zipkin spark streaming job. StreamFactory is a extensible interface that ingests data from Kafka or any other transport. The filtering step filters spans based on criteria like service name etc..(Issue #33). The aggregation phase groups the spans by time or trace ID. The adjuster phase is useful for making adjustments to spans that belong to the same trace. For example, the FinagleAdjuster fixes known bugs in the old finagle zipkin tracer. The final consumer stage persists the data to a storage system like ElasticSearch service. 
 
 ![zipkinspark_arch](https://cloud.githubusercontent.com/assets/93836/23466070/df14857e-fe4e-11e6-89ad-2294d435b7fa.png)
-
 
 ### Stream
 A stream is a source of json or thrift encoded span messages.
