@@ -27,7 +27,7 @@ import zipkin.TestObjects;
 import java.util.ArrayList;
 
 public class FinagleIssue343AdjusterTest {
-  FinagleIssue343Adjuster adjuster = FinagleIssue343Adjuster.newBuilder().build();
+  FinagleIssue343Adjuster adjuster = FinagleIssue343Adjuster.create();
 
   Endpoint localEndpoint =
       Endpoint.builder().serviceName("my-host").ipv4(127 << 24 | 1).port(9411).build();

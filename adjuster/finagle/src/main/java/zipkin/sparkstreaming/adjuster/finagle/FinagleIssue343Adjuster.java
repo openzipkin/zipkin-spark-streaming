@@ -24,30 +24,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Contains adjustments for finagle issue 343 (https://github.com/twitter/finagle/issues/343).
- * If applied, this adjuster drops finagle.flush annotation.
+ * This adjuster handles a bug in finagle memcached library where the duration of a span ends
+ * up being more than the actual value because a span is submitted twice.
+ *
+ * The fix is to drops finagle.flush annotation for memcache spans. We look for "Hit" or "Miss"
+ * binary annotations to make sure the span is coming from memcache.
+ *
+ * For more details see
+ * https://github.com/twitter/finagle/issues/343
+ *
  */
-@AutoValue
-public abstract class FinagleIssue343Adjuster extends Adjuster{
+public final class FinagleIssue343Adjuster extends Adjuster{
 
-  public static FinagleIssue343Adjuster.Builder newBuilder() {
-    return new AutoValue_FinagleIssue343Adjuster.Builder();
-  }
+  FinagleIssue343Adjuster() {}
 
-  @AutoValue.Builder
-  public interface Builder {
-    /**
-     * This adjuster handles a bug in finagle memcached library where the duration of a span ends
-     * up being more than the actual value because a span is submitted twice.
-     *
-     * The fix is to drops finagle.flush annotation for memcache spans. We look for "Hit" or "Miss"
-     * binary annotations to make sure the span is coming from memcache.
-     *
-     * For more details see
-     * https://github.com/twitter/finagle/issues/343
-     *
-     */
-    FinagleIssue343Adjuster build();
+  public static FinagleIssue343Adjuster create() {
+    return new FinagleIssue343Adjuster();
   }
 
   @Override protected boolean shouldAdjust(Span span) {

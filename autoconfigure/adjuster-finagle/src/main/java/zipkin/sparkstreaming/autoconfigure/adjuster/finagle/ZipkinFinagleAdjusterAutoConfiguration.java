@@ -39,7 +39,7 @@ public class ZipkinFinagleAdjusterAutoConfiguration {
       havingValue = "true"
   )
   Adjuster finagleIssue343Adjuster() {
-    return FinagleIssue343Adjuster.newBuilder().build();
+    return FinagleIssue343Adjuster.create();
   }
 
 }
