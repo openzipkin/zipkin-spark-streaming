@@ -29,6 +29,7 @@ import zipkin.sparkstreaming.autoconfigure.stream.kafka.ZipkinKafkaStreamFactory
     // These need to be explicity included as the shade plugin squashes spring.properties
     ZipkinKafkaStreamFactoryAutoConfiguration.class,
     ZipkinFinagleAdjusterAutoConfiguration.class,
+    ZipkinStorageConsumerAutoConfiguration.class,
     ZipkinFinagleIssue343AdjusterAutoConfiguration.class
 })
 public class ZipkinSparkStreamingJob {
