@@ -45,7 +45,16 @@ java -jar zipkin-sparkstreaming-job.jar \
   --zipkin.sparkstreaming.stream.kafka.bootstrap-servers=127.0.0.1:9092 \
   --zipkin.sparkstreaming.master=spark://127.0.0.1:7077
 ```
+### Spark quick start
+The quickest way to get started is to clone the repo, build it  and run it locally using [spark submit (http://spark.apache.org/downloads.html).
 
+```bash
+# wget the jar
+spark-submit \
+      --class zipkin.sparkstreaming.job.ZipkinSparkStreamingJob \ 
+      --master local[*] \      
+      zipkin-sparkstreaming-job.jar
+```
 ## Key Components
 
 The image below shows the internal architecture of zipkin spark streaming job. StreamFactory is a extensible interface that ingests data from Kafka or any other transport. The filtering step filters spans based on criteria like service name([#33](https://github.com/openzipkin/zipkin-sparkstreaming/issues/33)). The aggregation phase groups the spans by time or trace ID. The adjuster phase is useful for making adjustments to spans that belong to the same trace. For example, the FinagleAdjuster fixes known bugs in the old finagle zipkin tracer. The final consumer stage persists the data to a storage system like ElasticSearch service. 
